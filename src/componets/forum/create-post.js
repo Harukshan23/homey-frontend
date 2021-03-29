@@ -98,13 +98,14 @@ export default class CreatePost extends Base {
       });
 
       if (res.data.action == "true") {
+        this.exitDock()
         dispatchEvent(
           new CustomEvent("new-post-added", {
             detail: {
               title: this._qs("#title").value,
               content: this._qs("#content").value,
               user_id: this.getUserId(),
-              _id: "",
+              _id: 0,
               created: "just now",
             },
           })

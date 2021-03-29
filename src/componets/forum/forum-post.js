@@ -13,11 +13,11 @@ export default class Forum extends Base {
             <div class="post-row">
                 <h3 class="post-username" id="${
                   this.data.user_id
-                }">Anonymous user</h4>
+                }">Anonymous user</h3>
                 <h5 class="post-creadted">${this.data.created}</h5>
             </div>
             <div class="post-row">
-                <h2 class="post-heading">${this.data.title}</h3>
+                <h2 class="post-heading">${this.data.title}</h2>
                 <p class="justify-text">${this.data.content}</p>
             </div>
             <div class="post-row">
@@ -27,13 +27,12 @@ export default class Forum extends Base {
               <button id="submit">Add Comment</button>
               <div class="delete-btn">${
                 this.data._id == this.getUserId() || this.getUserType() == 1
-                  ? `<button id="delete-post" title="Delete the comment">🗑️</button>`
+                  ? `<button id="delete-post" title="Delete the Post">🗑️</button>`
                   : ""
               }
               </div>
             </div>
             <hr> 
-            <div class="new-comment-container"></div>
             <div class="comment-container"></div>
         </div>
     </div>
@@ -85,7 +84,7 @@ export default class Forum extends Base {
 
   //delete the post
   deletePost() {
-    this._qs("#delete-post").addEventListener("click", async () => {
+    this._qs(".delete-btn").addEventListener("click", async () => {
       this.wait(".posts");
 
       try {
@@ -110,6 +109,10 @@ export default class Forum extends Base {
   addComment() {
     this._qs("#submit").addEventListener("click", async () => {
       try {
+        if (!this.isLogin()) {
+          this.popup("Login to add a comment", "info");
+          return;
+        }
         this.wait("#submit");
         const comment = this._qs("#comment");
         const res = await axios.post(`${this.host}/forum/add-new-comment`, {
@@ -120,7 +123,7 @@ export default class Forum extends Base {
         if (res.status == 201) {
           this.popup(res.data.message, "success");
           this._qs(
-            ".new-comment-container"
+            ".comment-container"
           ).innerHTML += `<forum-comment data-data=${this.encode({
             comment: comment.value,
             created: "just now",
@@ -152,7 +155,7 @@ export default class Forum extends Base {
       : false;
 
     //add new comment
-    this.isLogin() ? this.addComment() : false;
+    this.addComment();
   } //End of connectedCallback()
 } //End of Class
 

@@ -26,7 +26,7 @@ export default class Report extends Base {
             </div>
         </div>
         
-        <pagination-comp></pagination-comp>
+        <div class="popup"></div>
         
     <div class="preview-advertisement"></div>
     `;
@@ -49,21 +49,97 @@ export default class Report extends Base {
                     <tr>
                         <td>${item._id}</td>
                         <td>${item.reason}</td>
-                        <td><a href="#${item.user_id}">User</a></td>
-                        <td><a href="#${item.property_id}">Property</a></td>
+                        <td><div class="user-link" id="${item.user_id}">User</div></td>
+                        <td><div class="ad-link" id="${item.property_id}">Property</div></td>
                         <td>${item.message}</td>
                         <td>
-                            <button class='primary-button'>Review</button>
+                            <button class='primary-button review-button' data-id="${item._id}">Review</button>
                         </td>
                         <td>${item.created}</td>
                     </tr>
                 `;
       });
+      //load view user component
+      this.loadViewUser();
+      //addPreview
+      this.adPreview();
+
+      //loadReview
+      this.loadReview();
     } catch (err) {
       console.log(err);
     }
     this.stopLoader();
   } //End loadRow()
+
+  //load view user component
+  loadViewUser() {
+    this._qsAll(".user-link").forEach((item) => {
+      item.addEventListener("click", () => this.viewUser(item.id));
+    });
+  } //end of loadViewUser()
+
+  //review ad
+  async reviewAd(id) {
+    this.wait(".review-button");
+    try {
+      await import("./subcomp/review-comp/review-comp.js");
+
+      this._qs(".popup").innerHTML = `
+                <review-comp
+                    id="${id}"
+                ></review-comp>`;
+    } catch (err) {
+      console.log(err.message);
+    }
+    this.unwait(".review-button");
+  }
+
+  //loadReview
+  loadReview() {
+    this._qsAll(".review-button").forEach((item) => {
+      item.addEventListener("click", () => {
+        this.reviewAd(item.dataset.id);
+      });
+    });
+  }
+
+  //View user account summary
+  async viewUser(id) {
+    this.setLoader();
+    await import("./subcomp/view-user/view-user.js")
+      .then(() => {
+        this._qs(".popup").innerHTML = `
+                <view-user
+                    id="${id}"
+                ></view-user>`;
+        this.stopLoader();
+      })
+      .catch((err) => {
+        this.stopLoader();
+        this.popup(err.message, "error", 10);
+      });
+  } //End of viewUser()
+
+  // Preview advertisement
+  adPreview() {
+    this._qsAll(".ad-link").forEach((item) => {
+      item.addEventListener("click", async () => {
+        this.wait(item);
+        const res = await axios.post(`${this.host}/admin-property/reported`, {
+          ...this.authData(),
+          id: item.id,
+        });
+        await import("./../../universal/preview-advertisement.js");
+        this._qs(
+          ".preview-advertisement"
+        ).innerHTML = `<preview-advertisement overview="true" data-data="${this.encode(
+          { ...res.data, _id: item.id }
+        )}"></preview-advertisement>`;
+        this.unwait(item);
+      });
+    });
+  } //End of adPreview()
 
   // //close the dock
   // close() {
